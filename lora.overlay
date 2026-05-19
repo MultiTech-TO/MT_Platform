@@ -21,6 +21,12 @@
 		};
 	};
 
+	eusart1_sleep: eusart1_sleep{
+		group0{
+			pins = <EUSART1_TX_PC1>, <EUSART1_RX_PC2>, <EUSART1_SCLK_PC3>;
+		};
+	};
+
     usart0_default: usart0_default {
 		group0 {
 			pins = <USART0_TX_PA0>;
@@ -29,32 +35,76 @@
 		};
 
 		group1 {
-			pins = <USART0_RX_PB5>;
+			pins = <USART0_RX_PC4>;
 			input-enable;
 			silabs,input-filter;
 		};
     };
+
+	usart0_sleep: usart0_sleep{
+		group0{
+			pins = <USART0_TX_PA0>, <USART0_RX_PC4>;
+		};
+	};
+
 };
 
 &eusart1{
     status = "okay";
-    cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
-    lora0: sx1262@2{
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-1 = <&eusart1_sleep>;
+	pinctrl-names = "default", "sleep";
+    cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>; // Here we set the cs pins to only the SX1262 CS pin
+    lora0: sx1262@0{ 
 		compatible = "semtech,sx1262";
-		reg = <2>;
+		status = "okay";
+		reg = <0>; // reg 0 refers to the first element of cs-gpio
 		label = "sx1262";
 		reset-gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
 		busy-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
-		tx-enable-gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
-		dio1-gpios = <&gpioa 8 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; // dio1-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>; 
+		// rx-enable-gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
+		dio1-gpios = <&gpioa 8 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; 
+		// dio1-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>; 
 		dio2-tx-enable;
 		spi-max-frequency = <1000000>;
     };
+	spi-flash0{
+		status = "disabled";
+	};
+	zephyr,display{
+		status = "disabled";
+	};
+
+};
+
+&i2c0 {
+	status = "okay";
+	bme280@76 {
+		compatible = "bosch,bme280";
+		status = "okay";
+		reg = <0x76>;
+	};
+    scd41@62 {
+        compatible = "sensirion,scd41";
+		status = "okay";
+        reg = <0x62>;
+        mode = <0>;
+    };
+	// stcc4@64{
+	// 	compatible = "sensirion,stcc4";
+	// 	status = "okay";
+	// 	reg = <0x64>;
+	// 	measurement-mode = <1>;
+	// };
+	si7021@40{
+		status = "disabled";
+	};
 };
 
 &usart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&usart0_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
 };

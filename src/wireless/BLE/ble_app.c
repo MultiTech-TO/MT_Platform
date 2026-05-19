@@ -41,10 +41,9 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include "ble_app.h"
-#include "health_thermo_service.h"
-#include "health_thermo_service_config.h"
+#include "co2_service/co2_service.h"
 
-LOG_MODULE_REGISTER(app, 3);
+LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
 
 /***************************************************************************//**
  * Definition.
@@ -56,11 +55,8 @@ LOG_MODULE_REGISTER(app, 3);
 /***************************************************************************//**
  * Static variable declaration.
  ******************************************************************************/
-static bool app_btn0_press = false;
-static struct gpio_callback btn0_callback;
-static double current_temperature = 0;
+
 static struct k_timer app_indicate_timer;
-static const struct gpio_dt_spec btn0 = GPIO_DT_SPEC_GET(BUTTON0, gpios);
 // /* BLE connection */
 struct bt_conn *ble_conn = NULL;
 static const struct bt_data ad[] = {
@@ -72,13 +68,11 @@ static const struct bt_data ad[] = {
 /***************************************************************************//**
  * Static application function declaration.
  ******************************************************************************/
-static int button0_init();
+
 static void bt_ready(int err);
 static void connected(struct bt_conn *connected, uint8_t err);
 static void disconnected(struct bt_conn *disconn, uint8_t reason);
-static void btn0_callback_handler(const struct device *port,
-                                  struct gpio_callback *cb,
-                                  gpio_port_pins_t pins);
+
 static void app_indicate_timer_handler(struct k_timer *timer_id);
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -86,70 +80,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
   .disconnected = disconnected,
 };
 
-/***************************************************************************//**
- * Static Application function definition.
- ******************************************************************************/
-static int button0_init()
-{
-  int ret = 0;
-
-  if (!gpio_is_ready_dt(&btn0)) {
-    LOG_ERR("Button 0 is not ready. ");
-    return ret;
-  }
-
-  ret = gpio_pin_configure_dt(&btn0, GPIO_INPUT);
-  if (ret != 0) {
-    LOG_ERR("Error %d: can't configure button on GPIO %s pin %d",
-            ret, btn0.port->name, btn0.pin);
-    return ret;
-  }
-
-  gpio_init_callback(&btn0_callback, btn0_callback_handler, BIT(btn0.pin));
-  gpio_add_callback(btn0.port, &btn0_callback);
-  ret = gpio_pin_interrupt_configure_dt(&btn0, GPIO_INT_EDGE_BOTH);
-  if (ret != 0) {
-    LOG_ERR("Error %d: can't configure button to interrupt on %s pin %d",
-            ret, btn0.port->name, btn0.pin);
-    return ret;
-  }
-  return 0;
-}
-
-static void btn0_callback_handler(const struct device *port,
-                                  struct gpio_callback *cb,
-                                  gpio_port_pins_t pins)
-{
-  app_btn0_press = (bool)gpio_pin_get_dt(&btn0) ? true : false;
-  printk("button state: %d", app_btn0_press);
-}
 
 static void app_indicate_timer_handler(struct k_timer *timer_id)
 {
-  health_thermometer_indicate_temp(ble_conn, current_temperature, false);
-}
-
-void temperature_measurement_ccc_changed(const struct bt_gatt_attr *attr,
-                                         uint16_t value)
-{
-  printk("Temperature measurement indication changed\n");
-  if (value == BT_GATT_CCC_INDICATE) {
-    // Start timer used for periodic indications.
-    k_timer_start(&app_indicate_timer,
-                  K_MSEC(1000),
-                  K_MSEC(SL_BT_HT_MEASUREMENT_INTERVAL_SEC));
-  } else {
-    k_timer_stop(&app_indicate_timer);
-  }
 }
 
 void temperature_measurement_indicate_cb(struct bt_conn *conn,
                                          struct bt_gatt_indicate_params *params,
                                          uint8_t err)
 {
-  LOG_INF("Indication %s, Temperature value: %g C\n",
-          err != 0U ? "fail" : "success",
-          current_temperature);
+
 }
 
 /***************************************************************************//**
@@ -170,7 +110,7 @@ static void bt_ready(int err)
     LOG_ERR("Advertising failed to start (err %d)", err);
     return;
   }
-
+  k_timer_start(&app_indicate_timer, K_SECONDS(30), K_SECONDS(30));
   LOG_INF("Configuration mode: waiting connections...");
 }
 
@@ -205,12 +145,6 @@ void ble_app_init(void)
 
   LOG_INF("Zephyr Application - Bluetooth SoC Thermometer.\n");
 
-  ret = button0_init();
-  if (ret) {
-    LOG_ERR("Button0 Initialization failed: %d.\n", ret);
-    return;
-  }
-
   /* Initialize the Bluetooth Subsystem */
   ret = bt_enable(bt_ready);
   if (ret) {
@@ -222,7 +156,7 @@ void ble_app_init(void)
   k_timer_init(&app_indicate_timer, app_indicate_timer_handler, NULL);
 
   // Initialized the health thermometer service
-  health_thermometer_init();
+
 
   LOG_INF("Application initialization is done.\n");
   LOG_INF("Waiting for connection...\n");
@@ -233,7 +167,5 @@ void ble_app_init(void)
  ******************************************************************************/
 void ble_app_process_action(void)
 {
-  current_temperature = 24;
-
   k_sleep(K_MSEC(500));
 }

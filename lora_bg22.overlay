@@ -1,0 +1,61 @@
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+/ {
+    aliases{
+		lora0 = &lora0;
+    };
+};
+
+&pinctrl{
+    usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PC1>, <USART0_CLK_PC3>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART0_RX_PC2>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+    usart1_default: usart1_default {
+		group0 {
+			pins = <USART1_TX_PA7>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART1_RX_PA8>;
+			input-enable;
+			silabs,input-filter;
+		};
+    };
+};
+
+&usart0{
+    status = "okay";
+    cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&usart0_default>;
+    lora0: sx1262@2{
+		compatible = "semtech,sx1262";
+		reg = <2>;
+		label = "sx1262";
+		reset-gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+		tx-enable-gpios = <&gpiod 2 GPIO_ACTIVE_LOW>;
+		dio1-gpios = <&gpioa 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; // dio1-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>; 
+		dio2-tx-enable;
+		spi-max-frequency = <1000000>;
+    };
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
