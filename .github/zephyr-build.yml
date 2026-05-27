@@ -1,0 +1,71 @@
+name: Action test
+
+on:
+  push:
+  pull_request:
+
+permissions: read-all
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-14, macos-15, windows-2022, windows-2025]
+        release: [v3.7-branch, v4.2-branch, v4.3-branch, main]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Main Zephyr repository checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: zephyrproject-rtos/zephyr
+          path: zephyr
+          ref: ${{ matrix.release }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: ./
+        with:
+          app-path: zephyr
+          toolchains: arm-zephyr-eabi
+          west-group-filter: -tools,-bootloader,-babblesim
+          west-project-filter: -nrf_hw_models
+          ccache-cache-key: ${{ matrix.os }}-${{ matrix.release }}
+
+      - name: Build firmware
+        working-directory: zephyr
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
+          fi
+
+          PLATFORMS_FLAGS=""
+          if [ "${{ runner.os }}-${{ runner.arch }}" == "Linux-ARM64" ]; then
+            PLATFORMS_FLAGS+="-p native_sim/native/64 "
+          else
+            PLATFORMS_FLAGS+="-p native_sim "
+          fi
+          PLATFORMS_FLAGS+="-p qemu_cortex_m0 "
+          PLATFORMS_FLAGS+="-p qemu_cortex_r5 "
+          PLATFORMS_FLAGS+="-p qemu_riscv32 "
+          PLATFORMS_FLAGS+="-p qemu_riscv32e "
+          PLATFORMS_FLAGS+="-p qemu_riscv64 "
+          PLATFORMS_FLAGS+="-p qemu_x86 "
+          PLATFORMS_FLAGS+="-p qemu_x86_64"
+
+          ./scripts/twister --force-color --inline-logs -T samples/hello_world -v $PLATFORMS_FLAGS $EXTRA_TWISTER_FLAGS
+
+      - name: Print ccache stats
+        if: runner.os != 'Windows'
+        run: |
+          ccache -s -vv
