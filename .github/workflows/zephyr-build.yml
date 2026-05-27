@@ -31,41 +31,12 @@ jobs:
           python-version: 3.12
 
       - name: Setup Zephyr project
-        uses: ./
+        uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: zephyr
+          app-path: app
           toolchains: arm-zephyr-eabi
-          west-group-filter: -tools,-bootloader,-babblesim
-          west-project-filter: -nrf_hw_models
-          ccache-cache-key: ${{ matrix.os }}-${{ matrix.release }}
+          west-version: 1.5.0
 
-      - name: Build firmware
-        working-directory: zephyr
-        shell: bash
+      - name: Build
         run: |
-          if [ "${{ runner.os }}" = "macOS" ]; then
-            EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
-          elif [ "${{ runner.os }}" = "Windows" ]; then
-            EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
-          fi
-
-          PLATFORMS_FLAGS=""
-          if [ "${{ runner.os }}-${{ runner.arch }}" == "Linux-ARM64" ]; then
-            PLATFORMS_FLAGS+="-p native_sim/native/64 "
-          else
-            PLATFORMS_FLAGS+="-p native_sim "
-          fi
-          PLATFORMS_FLAGS+="-p qemu_cortex_m0 "
-          PLATFORMS_FLAGS+="-p qemu_cortex_r5 "
-          PLATFORMS_FLAGS+="-p qemu_riscv32 "
-          PLATFORMS_FLAGS+="-p qemu_riscv32e "
-          PLATFORMS_FLAGS+="-p qemu_riscv64 "
-          PLATFORMS_FLAGS+="-p qemu_x86 "
-          PLATFORMS_FLAGS+="-p qemu_x86_64"
-
-          ./scripts/twister --force-color --inline-logs -T samples/hello_world -v $PLATFORMS_FLAGS $EXTRA_TWISTER_FLAGS
-
-      - name: Print ccache stats
-        if: runner.os != 'Windows'
-        run: |
-          ccache -s -vv
+          west build app
