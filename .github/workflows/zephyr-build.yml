@@ -28,7 +28,7 @@ jobs:
       - name: Setup Zephyr project
         uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: applications/MT_Platform
+          app-path: .
           toolchains: arm-zephyr-eabi
           west-version: 1.5.0
 
@@ -36,4 +36,4 @@ jobs:
         run: |
           git submodule init --update
           west blobs fetch hal_silabs
-          west build applications/MT_platform --board swt_043a_01
+          west build . --board swt_043a_01
