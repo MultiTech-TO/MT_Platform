@@ -40,9 +40,4 @@ jobs:
           
       - name: Build
         run: |
-<<<<<<< HEAD
-          west blobs fetch hal_silabs
-          west build applications/MT_platform --board swt_043a_01
-=======
           west build . --board swt_043a_01
->>>>>>> 07cd01c21fa55085ba89bf6b4e9cf5512d4fa22d
