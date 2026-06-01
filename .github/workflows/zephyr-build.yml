@@ -18,7 +18,7 @@ jobs:
         with:
           repository: zephyrproject-rtos/zephyr
           path: zephyr
-          ref: ${{ matrix.release }}
+          ref: v4.4.0
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -34,6 +34,5 @@ jobs:
 
       - name: Build
         run: |
-          git submodule init --update
           west blobs fetch hal_silabs
           west build applications/MT_platform --board swt_043a_01

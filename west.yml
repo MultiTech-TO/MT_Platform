@@ -30,7 +30,14 @@ manifest:
   projects:
     - name: zephyr
       revision: v4.4.0
-      import: true
+      import:
+        name-allowlist: 
+         - cmsis
+         - cmsis_6
+         - hal_silabs
+         - loramac-node
+        path-allowlist:
+         - modules/crypto/*
 
   self:
     path: applications/MT_Platform
