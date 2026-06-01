@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with: 
+          submodules: recursive
 
       - name: Main Zephyr repository checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -28,11 +30,19 @@ jobs:
       - name: Setup Zephyr project
         uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: applications/MT_Platform
+          app-path: .
           toolchains: arm-zephyr-eabi
           west-version: 1.5.0
-
-      - name: Build
+          
+      - name: Fetch hal_silabs
         run: |
           west blobs fetch hal_silabs
+          
+      - name: Build
+        run: |
+<<<<<<< HEAD
+          west blobs fetch hal_silabs
           west build applications/MT_platform --board swt_043a_01
+=======
+          west build . --board swt_043a_01
+>>>>>>> 07cd01c21fa55085ba89bf6b4e9cf5512d4fa22d
