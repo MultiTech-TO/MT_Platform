@@ -42,4 +42,4 @@ jobs:
           
       - name: Build
         run: |
-          west build . --board swt_043a_01 -DBOARD_ROOT=./MT_Platform_Boards/boards/Multitech
+          west build . --board swt_043a_01 -DBOARD_ROOT=MT_Platform_Boards
