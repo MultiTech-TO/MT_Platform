@@ -1,0 +1,4 @@
+[submodule "MT_Platform_Boards"]
+	path = MT_Platform_Boards
+	url = git@github.com:MultiTech-TO/MT_Platform_Boards.git
+	branch = SWT-043A-dev
