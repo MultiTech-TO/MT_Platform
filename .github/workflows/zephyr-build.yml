@@ -54,4 +54,5 @@ jobs:
           
       - name: Build
         run: |
+          source ./zephyr/zephyr-env.sh
           west build . --board swt_043a_01 -DBOARD_ROOT=MT_Platform_Boards
