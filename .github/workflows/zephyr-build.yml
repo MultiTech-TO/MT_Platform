@@ -22,6 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
+          path: app
           token: ${{ steps.app_token.outputs.token }}
           persist-credentials: false
           submodules: recursive
@@ -42,7 +43,7 @@ jobs:
       - name: Setup Zephyr project
         uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: .
+          app-path: app
           toolchains: arm-zephyr-eabi
           west-group-filter: -tools,-bootloader,-babblesim
           west-project-filter: -nrf_hw_models
@@ -55,4 +56,4 @@ jobs:
       - name: Build
         run: |
           printenv
-          west build . --board swt_043a_01 -DBOARD_ROOT=MT_Platform_Boards
+          west build app --board swt_043a_01 -DBOARD_ROOT=MT_Platform_Boards
