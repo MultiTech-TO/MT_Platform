@@ -54,5 +54,5 @@ jobs:
           
       - name: Build
         run: |
-          ./zephyr/zephyr-env.sh
+          printenv
           west build . --board swt_043a_01 -DBOARD_ROOT=MT_Platform_Boards
