@@ -10,22 +10,21 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
+      - name: Generate Short-Lived Token from App
+        id: app_token
+        uses: actions/create-github-app-token@v1 # Use a trusted action
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          # The repositories the token needs access to
+          repositories: 'MT_Platform_Boards'
+          
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with: 
-          submodules: false
-          
-      - name: Setup Submodule SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.BOARD_REPO_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          
-      - name: Init and update submodules
-        run: |
-          git submodule sync
-          git submodule update --init --recursive
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app_token.outputs.token }}
+          submodules: recursive
+          fetch-depth: 0
         
       - name: Main Zephyr repository checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
