@@ -17,7 +17,7 @@ jobs:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           # The repositories the token needs access to
-          repositories: 'MT_Platform_Boards'
+          repositories: 'MT_Platform, MT_Platform_Boards'
           
       - name: Checkout
         uses: actions/checkout@v5
