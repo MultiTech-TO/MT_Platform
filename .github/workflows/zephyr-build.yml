@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Generate Short-Lived Token from App
         id: app_token
-        uses: actions/create-github-app-token@v1 # Use a trusted action
+        uses: actions/create-github-app-token@v3 # Use a trusted action
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -20,7 +20,7 @@ jobs:
           repositories: 'MT_Platform_Boards'
           
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ steps.app_token.outputs.token }}
           submodules: recursive
