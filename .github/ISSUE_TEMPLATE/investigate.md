@@ -4,6 +4,7 @@ about: Investigate something
 title: ''
 labels: ''
 assignees: ''
+type: Investigation
 
 ---
 
