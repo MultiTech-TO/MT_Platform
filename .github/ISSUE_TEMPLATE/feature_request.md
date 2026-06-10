@@ -7,14 +7,8 @@ assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+# Summary
+Provide a summary of what the feature is, and why it is being added (e.g. add power management for SX1262, needed to reduce sleep current in application)
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
-
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
-
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## Details
+Provide a detailed description of what needs to be done for this feature to be complete. (e.g. add the low power pin control group to device tree node for SX1262, measure current to confirm it matches the sleep current from the datasheet, etc..)
