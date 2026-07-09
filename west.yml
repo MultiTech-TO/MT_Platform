@@ -36,6 +36,12 @@ manifest:
          - cmsis_6
          - hal_silabs
          - loramac-node
+         - lvgl
+         - mbedtls
+         - mcuboot
+         - nanopb
+         - tinycrypt
+         - tf-psa-crypto
         path-allowlist:
          - modules/crypto/*
 
