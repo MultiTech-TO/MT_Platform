@@ -5,11 +5,14 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(lorawan)
 
+
 FILE(GLOB app_sources                       
-    src/*.c                                 
-    src/wireless/BLE/*.c
-    src/wireless/BLE/co2_service/*.c                        
-    src/wireless/LoRa/*.c                        
-    src/sensors/*.c)
+    src/*.c    
+    src/display/*.c
+    src/sensors/co2_sensor.c
+    src/wireless/BLE/co2_service/*.c            
+    src/wireless/BLE/ble_app.c                             
+    src/wireless/LoRa/*.c
+    src/wireless/*.c)
 
 target_sources(app PRIVATE ${app_sources})

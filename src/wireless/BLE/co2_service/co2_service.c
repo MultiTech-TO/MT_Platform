@@ -10,12 +10,14 @@ const struct bt_uuid *base_uuid =
 #define CO2_SERVICE_UUID    0x1700
 #define CO2_VALUE_CHAR_UUID 0x1701
 #define TP_VALUE_CHAR_UUID  0x1702
-
-#define CO2_CHAR_NAME       "CO2 Sensor"
-#define TP_CHAR_NAME        "Temperature Sensor"
+#define HUM_VALUE_CHAR_UUID	0x1703
+#define CO2_CHAR_NAME       "CO2 (PPM)"
+#define TP_CHAR_NAME        "Temperature (Celsius)"
+#define HUM_CHAR_NAME		"Humidity (\%)"
 
 uint16_t current_co2 = 400;
 uint16_t current_temp = 24;
+uint16_t current_humidity = 50;
 
 static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -40,21 +42,28 @@ static ssize_t temperture_type_read_cb(struct bt_conn *conn,
 				       uint16_t offset);
 
 BT_GATT_SERVICE_DEFINE(co2_svc,
-		       BT_GATT_PRIMARY_SERVICE(BT_UUID_DECLARE_16(CO2_SERVICE_UUID)),
-		       BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_16(CO2_VALUE_CHAR_UUID),
+		       	BT_GATT_PRIMARY_SERVICE(BT_UUID_DECLARE_16(CO2_SERVICE_UUID)),
+		       	BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_16(CO2_VALUE_CHAR_UUID),
 					      BT_GATT_CHRC_READ,
 					      BT_GATT_PERM_READ,
 					      read_u16,
 					      NULL,
 					      &current_co2),
-		       BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_16(TP_VALUE_CHAR_UUID),
+		       	BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_16(TP_VALUE_CHAR_UUID),
 					      BT_GATT_CHRC_READ,
 					      BT_GATT_PERM_READ,
 					      read_u16,
 					      NULL,
-					      &current_temp)
+					      &current_temp),
+				BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_16(HUM_VALUE_CHAR_UUID),
+					      BT_GATT_CHRC_READ,
+					      BT_GATT_PERM_READ,
+					      read_u16,
+					      NULL,
+					      &current_humidity)
 );
 
+// Health Thermometer example GATT configuration for reference
 // BT_GATT_SERVICE_DEFINE(hts_svc,
 //                        BT_GATT_PRIMARY_SERVICE(BT_UUID_HTS),
 //                        BT_GATT_CHARACTERISTIC(BT_UUID_HTS_MEASUREMENT,
@@ -134,4 +143,10 @@ int co2_service_init(void)
 
 int co2_service_run(void)
 {
+}
+
+void co2_service_update(co2_data_t *data){
+	current_co2 = data->co2.val1;
+	current_temp = data->temperature.val1 * 100 + data->temperature.val2;
+	current_humidity = data->humidity.val1 * 100 + data->humidity.val2;
 }

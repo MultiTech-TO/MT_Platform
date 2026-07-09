@@ -12,8 +12,6 @@
 ---
 BasedOnStyle: LLVM
 AlignConsecutiveMacros: AcrossComments
-AllowAllArgumentsOnNextLine: true
-AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
@@ -28,9 +26,6 @@ AttributeMacros:
   - __syscall
   - __syscall_always_inline
   - __subsystem
-BinPackArguments: true
-BinPackLongBracedList: true
-BinPackParameters: OnePerLine
 BitFieldColonSpacing: After
 BreakBeforeBraces: Linux
 ColumnLimit: 100

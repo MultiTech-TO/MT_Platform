@@ -43,13 +43,12 @@
 #include "ble_app.h"
 #include "co2_service/co2_service.h"
 
-LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(app, 3);
 
 /***************************************************************************//**
  * Definition.
  ******************************************************************************/
-#define BUTTON0         DT_ALIAS(sw0)
-#define DEVICE_NAME     "Thermometer Example"
+#define DEVICE_NAME     "IAQ POC"
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 /***************************************************************************//**
@@ -57,6 +56,7 @@ LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
  ******************************************************************************/
 
 static struct k_timer app_indicate_timer;
+
 // /* BLE connection */
 struct bt_conn *ble_conn = NULL;
 static const struct bt_data ad[] = {
@@ -80,16 +80,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
   .disconnected = disconnected,
 };
 
-
 static void app_indicate_timer_handler(struct k_timer *timer_id)
 {
-}
-
-void temperature_measurement_indicate_cb(struct bt_conn *conn,
-                                         struct bt_gatt_indicate_params *params,
-                                         uint8_t err)
-{
-
 }
 
 /***************************************************************************//**
@@ -110,7 +102,7 @@ static void bt_ready(int err)
     LOG_ERR("Advertising failed to start (err %d)", err);
     return;
   }
-  k_timer_start(&app_indicate_timer, K_SECONDS(30), K_SECONDS(30));
+
   LOG_INF("Configuration mode: waiting connections...");
 }
 
@@ -142,9 +134,7 @@ static void disconnected(struct bt_conn *disconn, uint8_t reason)
 void ble_app_init(void)
 {
   int ret = 0;
-
-  LOG_INF("Zephyr Application - Bluetooth SoC Thermometer.\n");
-
+  LOG_INF("Initial Bluetooth");
   /* Initialize the Bluetooth Subsystem */
   ret = bt_enable(bt_ready);
   if (ret) {
@@ -155,10 +145,7 @@ void ble_app_init(void)
   // Initialize the periodic indicate timer
   k_timer_init(&app_indicate_timer, app_indicate_timer_handler, NULL);
 
-  // Initialized the health thermometer service
-
-
-  LOG_INF("Application initialization is done.\n");
+  LOG_INF("Bluetooth initialization is done.\n");
   LOG_INF("Waiting for connection...\n");
 }
 
@@ -167,5 +154,4 @@ void ble_app_init(void)
  ******************************************************************************/
 void ble_app_process_action(void)
 {
-  k_sleep(K_MSEC(500));
 }

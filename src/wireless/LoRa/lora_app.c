@@ -3,27 +3,34 @@
 #include <zephyr/device.h>
 #include <zephyr/lorawan/lorawan.h>
 #include <zephyr/kernel.h>
+#include <stdbool.h>
+
+#include "../payload.h"
 
 /* Customize based on network configuration */
-#define LORAWAN_DEV_EUI  {0xDD, 0xEE, 0xAA, 0xDD, 0xBB, 0xEE, 0xEE, 0xFF}
-#define LORAWAN_JOIN_EUI {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+#define LORAWAN_DEV_EUI  {0x00, 0xAA, 0x00, 0xAA, 0x00, 0xAB, 0x00, 0x00}
+#define LORAWAN_JOIN_EUI {0xAB, 0xAB, 0xAB, 0xAB, 0xAB, 0xAB, 0xAB, 0xAB}
 #define LORAWAN_APP_KEY                                                                            \
-	{0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6,                                           \
-	 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C}
+	{0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB}
 
 #define DELAY K_MSEC(10000)
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_class_a, CONFIG_LOG_DEFAULT_LEVEL);
 
-// The max payload size used by the application. Used to allocate space for the
-// payload queue.
-#define PAYLOAD_MAX_SIZE 			32
-#if PAYLOAD_MAX_SIZE > 255
-#warning "Payload size may not exceed 255!"
-#endif
+static bool is_joined;
+static uint32_t curr_time;
 
-K_FIFO_DEFINE(payload_queue);
+struct message_item{
+	uint16_t co2;
+	uint16_t temperature_i;
+	uint16_t temperature_d;
+	uint16_t humidity_i;
+	uint16_t humidity_d;
+};
+
+K_MSGQ_DEFINE(payload_queue, sizeof(struct message_item), 10, 1);
+
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
@@ -84,13 +91,24 @@ static void lorwan_datarate_changed(enum lorawan_datarate dr)
 	LOG_INF("New Datarate: DR_%d, Max Payload %d", dr, max_size);
 }
 
+static void lorawan_set_sub_band(uint8_t sub_band){
+	sub_band--;
+	uint8_t mask = 0xFF;
+	uint16_t masks[6] = {0};
+	masks[sub_band/2] = 0xFF << sub_band % 2;
+	lorawan_set_channels_mask(masks, sizeof(masks) / 2);
+}
+
+// This must be defined globally or the callback address will become corrupted when it goes out of scope
+struct lorawan_downlink_cb downlink_cb = {.port = LW_RECV_PORT_ANY, .cb = dl_callback};
+
 int lora_app_init(void)
 {
 	const struct device *lora_dev;
 
 	int ret;
 
-	struct lorawan_downlink_cb downlink_cb = {.port = LW_RECV_PORT_ANY, .cb = dl_callback};
+	
 
 	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
 	if (!device_is_ready(lora_dev)) {
@@ -111,7 +129,8 @@ int lora_app_init(void)
 		LOG_ERR("lorawan_start failed: %d", ret);
 		return 0;
 	}
-
+	lorawan_set_datarate(LORAWAN_DR_1);
+	lorawan_set_sub_band(1);
 	lorawan_register_downlink_callback(&downlink_cb);
 	lorawan_register_dr_changed_callback(lorwan_datarate_changed);
 }
@@ -123,7 +142,7 @@ void lora_app_run(void)
 	if (LRWAN_APP_STATE_e == NOT_JOINED) {
 		int sc = lora_app_join();
 		if(sc == 0){
-			LRWAN_APP_STATE_e = JOIN_BUSY;
+			LRWAN_APP_STATE_e = JOINED;
 		}
 		else{
 			LRWAN_APP_STATE_e = JOIN_BACKOFF;
@@ -134,27 +153,42 @@ void lora_app_run(void)
 	else if (LRWAN_APP_STATE_e == JOIN_BACKOFF) {
 		if(k_uptime_get() - lora_app_tick >= 60000){
 			LRWAN_APP_STATE_e = NOT_JOINED;
+			
 		}
 	} else if (LRWAN_APP_STATE_e == JOINED) {
+		// lorawan_request_device_time(false);
+		uint8_t data[2] = {0x1, 0x2};
+		lorawan_send(1, data, 2, LORAWAN_MSG_CONFIRMED);
+		LRWAN_APP_STATE_e = IDLE;
 
 	} else if (LRWAN_APP_STATE_e == IDLE) {
-		if(k_fifo_is_empty(&payload_queue)){
+		if(k_msgq_num_used_get(&payload_queue) != 0){
 			return;
 		}
-		struct lora_queue_item_t queue_item = *(struct lora_queue_item_t *)k_fifo_get(&payload_queue, K_NO_WAIT);
-		lorawan_send(1, queue_item.bytes, queue_item.payload_size, LORAWAN_MSG_CONFIRMED);
+		struct message_item msg = {0};
+		k_msgq_get(&payload_queue, &msg, K_FOREVER);
+		lorawan_send(1, (uint8_t *)&msg, sizeof(msg), LORAWAN_MSG_CONFIRMED);
+		LOG_HEXDUMP_INF((uint8_t *)&msg, sizeof(msg), "PAYLOAD: ");
 
 	} else if (LRWAN_APP_STATE_e == BUSY) {
 	}
 }
 
-bool lora_app_is_joined(void);
+bool lora_app_is_joined(void){
+	return LRWAN_APP_STATE_e > JOINED;
+}
 
-void lora_app_add_uplink(uint8_t *data, uint8_t len){
-	struct lora_queue_item_t queue_item = {0};
-	for(int i = 0; i < len; i++){
-		queue_item.bytes[i] = data[i];
+void lora_app_add_uplink(co2_data_t *co2_data){
+	if(LRWAN_APP_STATE_e < JOINED){
+		return;
 	}
-	queue_item.payload_size = len;
-	k_fifo_put(&payload_queue, &queue_item);
+
+	struct message_item msg = {.co2 = co2_data->co2.val1,
+								.temperature_i = co2_data->temperature.val1,
+								.temperature_d = co2_data->temperature.val2,
+								.humidity_i = co2_data->humidity.val1,
+								.humidity_d = co2_data->humidity.val2
+							};
+
+	k_msgq_put(&payload_queue, &msg, K_NO_WAIT);
 }
