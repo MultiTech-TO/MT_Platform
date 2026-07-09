@@ -15,7 +15,6 @@
 #include "wireless/BLE/ble_app.h"
 #include "wireless/BLE/co2_service/co2_service.h"
 #include "wireless/LoRa/lora_app.h"
-#include "events.h"
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/shell/shell.h>

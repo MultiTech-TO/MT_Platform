@@ -5,7 +5,6 @@
 #include <zephyr/kernel.h>
 #include <stdbool.h>
 
-#include "../payload.h"
 
 /* Customize based on network configuration */
 #define LORAWAN_DEV_EUI  {0x00, 0xAA, 0x00, 0xAA, 0x00, 0xAB, 0x00, 0x00}
@@ -47,11 +46,6 @@ static enum {
 	BUSY
 } LRWAN_APP_STATE_e;
 
-struct lora_queue_item_t{
-	void *fifo_reserved;
-	uint8_t bytes[PAYLOAD_MAX_SIZE];
-	uint8_t payload_size;
-};
 
 static int lora_app_join(void)
 {
