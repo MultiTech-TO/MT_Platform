@@ -136,6 +136,7 @@ void lora_app_run(void)
 	if (LRWAN_APP_STATE_e == NOT_JOINED) {
 		int sc = lora_app_join();
 		if(sc == 0){
+			lorawan_set_sub_band(1); // The sub-band is reset on join
 			LRWAN_APP_STATE_e = JOINED;
 		}
 		else{

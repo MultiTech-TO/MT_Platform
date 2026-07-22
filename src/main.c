@@ -19,9 +19,8 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/shell/shell.h>
 #include "display/display.h"
-#define DELAY K_MSEC(100)
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#define DELAY K_MSEC(1)
+#define LOG_LEVEL LOG_LEVEL_INFO
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
@@ -30,7 +29,7 @@ LOG_MODULE_REGISTER(main);
 #define STACKSIZE 3072
 
 /* scheduling priority used by each thread */
-#define PRIORITY 7
+#define PRIORITY 2
 
 K_EVENT_DEFINE(sensor_event);
 
@@ -196,7 +195,7 @@ int main(void)
 	while (1) {
 		// Update every 60 seconds or if the button is pressed. Limit updates
 		// from button presses to every 5 seconds
-		if(k_uptime_seconds() - uptime > 60 || (btn_pressed && k_uptime_seconds() - uptime > 5)){
+		if(k_uptime_seconds() - uptime > 120 || (btn_pressed && k_uptime_seconds() - uptime > 5)){
 			co2_sensor_get_data(&co2_data);
 			display_update(&co2_data);
 			co2_service_update(&co2_data);
@@ -209,6 +208,6 @@ int main(void)
 		}
 		sloan_task();
 		display_run();
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(10));
 	}
 }
