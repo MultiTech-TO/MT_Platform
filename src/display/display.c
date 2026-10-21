@@ -33,16 +33,16 @@ int display_init(void){
 
     table = lv_table_create(screen);
 	lv_obj_set_style_text_font(table, &lv_font_montserrat_24, 0);
-	lv_table_set_col_width(table, 0, 200);
-	lv_table_set_col_width(table, 1, 200);
+	lv_table_set_col_width(table, 0, 100);
+	lv_table_set_col_width(table, 1, 100);
     lv_table_set_row_count(table, 3);
     lv_table_set_column_count(table, 2);
     lv_obj_set_align(table, LV_ALIGN_CENTER);
-    lv_table_set_cell_value(table, 0, 0, "CO2");
+    lv_table_set_cell_value(table, 0, 0, "CO2 PPM");
     lv_table_set_cell_value(table, 0, 1, "");
-    lv_table_set_cell_value(table, 1, 0, "Temperature");
+    lv_table_set_cell_value(table, 1, 0, "T (C)");
     lv_table_set_cell_value(table, 1, 1, "");
-    lv_table_set_cell_value(table, 2, 0, "Humidity");
+    lv_table_set_cell_value(table, 2, 0, "H (\%)");
     lv_table_set_cell_value(table, 2, 1, "");
 
 	lv_timer_handler();
@@ -57,13 +57,13 @@ int display_run(void){
 int display_update(co2_data_t *co2_data){
 	uint8_t buf[32] = {0};
 	
-	snprintk(buf, sizeof(buf), "%d ppm", co2_data->co2.val1);
+	snprintk(buf, sizeof(buf), "%d", co2_data->co2.val1);
 	lv_table_set_cell_value(table, 0, 1, buf);
 
-	snprintk(buf, sizeof(buf), "%d.%2d °C", co2_data->temperature.val1, co2_data->temperature.val2);
+	snprintk(buf, sizeof(buf), "%d.%2d", co2_data->temperature.val1, co2_data->temperature.val2);
 	lv_table_set_cell_value(table, 1, 1, buf);
 
-	snprintk(buf, sizeof(buf), "%d.%2d \%", co2_data->humidity.val1, co2_data->humidity.val2);
+	snprintk(buf, sizeof(buf), "%d.%2d", co2_data->humidity.val1, co2_data->humidity.val2);
 	lv_table_set_cell_value(table, 2, 1, buf);
 }
 

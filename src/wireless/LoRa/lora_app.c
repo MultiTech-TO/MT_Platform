@@ -5,18 +5,23 @@
 #include <zephyr/kernel.h>
 #include <stdbool.h>
 
+#include "time_conv.h"
+
 
 /* Customize based on network configuration */
 #define LORAWAN_DEV_EUI  {0x00, 0xAA, 0x00, 0xAA, 0x00, 0xAB, 0x00, 0x00}
 #define LORAWAN_JOIN_EUI {0xAB, 0xAB, 0xAB, 0xAB, 0xAB, 0xAB, 0xAB, 0xAB}
 #define LORAWAN_APP_KEY                                                                            \
-	{0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB, 0xAA, 0xBB}
+	{0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77}
 
 #define DELAY K_MSEC(10000)
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_class_a, CONFIG_LOG_DEFAULT_LEVEL);
 
+static uint16_t join_backoff_times[] = {min_2_sec(15), min_2_sec(30), hr_2_sec(1), hr_2_sec(2), hr_2_sec(4), hr_2_sec(8), hr_2_sec(12)};
+
+static bool join_started;
 static bool is_joined;
 static uint32_t curr_time;
 
@@ -101,9 +106,7 @@ int lora_app_init(void)
 	const struct device *lora_dev;
 
 	int ret;
-
 	
-
 	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
 	if (!device_is_ready(lora_dev)) {
 		LOG_ERR("%s: device not ready.", lora_dev->name);
@@ -129,29 +132,45 @@ int lora_app_init(void)
 	lorawan_register_dr_changed_callback(lorwan_datarate_changed);
 }
 
-int64_t lora_app_tick = 0;
+
 
 void lora_app_run(void)
 {
+	static uint8_t backoff_idx;
+	static uint32_t lora_app_tick;
+
 	if (LRWAN_APP_STATE_e == NOT_JOINED) {
-		int sc = lora_app_join();
-		if(sc == 0){
-			lorawan_set_sub_band(1); // The sub-band is reset on join
-			LRWAN_APP_STATE_e = JOINED;
-		}
-		else{
-			LRWAN_APP_STATE_e = JOIN_BACKOFF;
-			lora_app_tick = k_uptime_get();
+		if(join_started){
+			int sc = lora_app_join();
+			if(sc == 0){
+				lorawan_set_sub_band(1); // The sub-band is reset on join
+				LRWAN_APP_STATE_e = JOINED;
+			}
+			else{
+				LRWAN_APP_STATE_e = JOIN_BACKOFF;
+				lora_app_tick = 0;
+			}
 		}
 		return;
 	}
 	else if (LRWAN_APP_STATE_e == JOIN_BACKOFF) {
-		if(k_uptime_get() - lora_app_tick >= 60000){
-			LRWAN_APP_STATE_e = NOT_JOINED;
+		if(lora_app_tick == 0){
+			lora_app_tick = k_uptime_seconds();
+		}
+		if(k_uptime_seconds() - lora_app_tick >= join_backoff_times[backoff_idx]){
 			
+			int sc = lora_app_join();
+			if(sc == 0){
+				LRWAN_APP_STATE_e = JOINED;
+				backoff_idx = 0;
+			}
+			else{
+				lora_app_tick = 0;
+				backoff_idx++;
+			}
 		}
 	} else if (LRWAN_APP_STATE_e == JOINED) {
-		// lorawan_request_device_time(false);
+		lorawan_request_device_time(false);
 		uint8_t data[2] = {0x1, 0x2};
 		lorawan_send(1, data, 2, LORAWAN_MSG_CONFIRMED);
 		LRWAN_APP_STATE_e = IDLE;
@@ -167,6 +186,10 @@ void lora_app_run(void)
 
 	} else if (LRWAN_APP_STATE_e == BUSY) {
 	}
+}
+
+void lora_app_start_join(void){
+	join_started = true;
 }
 
 bool lora_app_is_joined(void){

@@ -82,6 +82,9 @@ int co2_sensor_init(void)
 	if (sc != 0) {
 		return sc;
 	}
+
+	struct sensor_value pressure = {.val1 = 0x03db, .val2 = 0};
+	co2_sensor_set_p(&pressure);
 	return 0;
 }
 

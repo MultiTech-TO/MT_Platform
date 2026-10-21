@@ -13,6 +13,7 @@ typedef struct{
 
 int co2_sensor_init(void);
 bool co2_sensor_data_ready(void);
+int co2_sensor_force_recalib(void);
 int co2_sensor_get_data(co2_data_t *data);
 int co2_sensor_set_p(struct sensor_value *pressure);
 
