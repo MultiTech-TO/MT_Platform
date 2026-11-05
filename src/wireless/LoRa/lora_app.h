@@ -3,13 +3,13 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include "../../sensors/co2_sensor.h"
+#include <zephyr/sensing/sensing_datatypes.h>
+#include "../../sensors/light_sensor.h"
 
 int lora_app_init(void);
 void lora_app_run(void);
 void lora_app_start_join(void);
 bool lora_app_is_joined(void);
-void lora_app_add_uplink(co2_data_t *co2_data);
+void lora_app_add_uplink(struct sensor_value *lux, struct sensor_value *white);
 
 #endif

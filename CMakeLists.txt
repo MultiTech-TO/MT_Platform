@@ -11,6 +11,7 @@ FILE(GLOB app_sources
     src/*.c    
     src/display/*.c
     src/sensors/co2_sensor.c
+    src/sensors/light_sensor.c
     src/utils/*.c
     src/wireless/BLE/co2_service/*.c            
     src/wireless/BLE/ble_app.c                             
